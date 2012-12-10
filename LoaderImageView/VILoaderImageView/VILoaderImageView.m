@@ -15,9 +15,9 @@
 
 #define LENGTH_OF_CACHE                 86400
 
-#define PREDECOMPRESS                   1
+#define PREDECOMPRESS                   0
 
-#define LOCAL_CACHE_MAX_ITEMS           50
+#define LOCAL_CACHE_MAX_ITEMS           20
 
 #define MAX_CONCURRENT_OPERATIONS       5
 
@@ -105,7 +105,7 @@ static NSMutableArray *_localCache = nil;
     NSArray *results = [[VILoaderImageView getCache] filteredArrayUsingPredicate:predicate];
     
     if ([results count] == 1) {
-        NSLog(@"Cache hit");
+        NSLog(@"Local cache hit");
         NSDictionary*imageDict = [results objectAtIndex:0];
         
         [locallyCached removeObject:imageDict];
@@ -130,7 +130,7 @@ static NSMutableArray *_localCache = nil;
     NSArray *results = [[VILoaderImageView getCache] filteredArrayUsingPredicate:predicate];
     
     if ([results count] == 1) {
-        NSLog(@"Cache hit");
+        NSLog(@"Local cache hit");
         NSDictionary*imageDict = [results objectAtIndex:0];
         
         [locallyCached removeObject:imageDict];
@@ -284,7 +284,10 @@ static NSMutableArray *_localCache = nil;
 
 - (void)animateImage:(UIImage *)image
 {
+
     dispatch_async(dispatch_get_main_queue(), ^{
+        self.hidden = NO;
+        self.alpha = 1;
         self.image = image;
         CATransition *animation = [CATransition animation];
         [animation setDuration:0.2];
@@ -417,13 +420,13 @@ static NSMutableArray *_localCache = nil;
     if (image == nil) {
         // Check for a hard cached version
         if([[NSFileManager defaultManager] fileExistsAtPath: uniquePath]) {
-
+            NSLog(@"File cache hit");
             image = (PREDECOMPRESS?[[UIImage alloc] initWithContentsOfFileDecompressed: uniquePath]:
                      [UIImage imageWithContentsOfFile: uniquePath]);
-                        [self addImageToLocalCache:image withKey:[[uniquePath componentsSeparatedByString:@"/"]lastObject]];
+            
+            [self addImageToLocalCache:image withKey:[[uniquePath componentsSeparatedByString:@"/"]lastObject]];
             image = [UIImage imageWithCGImage:[image CGImage] scale:4.0 orientation:UIImageOrientationUp];
 
-            NSLog(@"image size %@", NSStringFromCGSize(image.size));
         }
     }
 	
@@ -456,6 +459,14 @@ static NSMutableArray *_localCache = nil;
     uniquePath = [uniquePath stringByAppendingString:@"@2x"];
     
     return uniquePath;
+}
+
++ (void)clearLocalCache
+{
+    NSLog(@"Clear cache");
+    NSMutableArray *locallyCached = [VILoaderImageView getCache];
+    [locallyCached removeAllObjects];
+    
 }
 
 @end

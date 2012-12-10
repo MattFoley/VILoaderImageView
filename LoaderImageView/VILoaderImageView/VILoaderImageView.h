@@ -17,6 +17,8 @@
 @property (strong, nonatomic) UIColor *indicatorColor;
 + (NSOperationQueue *)getQueue;
 + (void)cacheImage:(NSString *)imageURLString completion:(void (^)(UIImage *image))completion;
++ (void)getCachedImage:(NSString *)imageURLString completion:(void (^)(UIImage *image))completion;
++ (void)clearLocalCache;
 
 - (id)initWithFrame:(CGRect)frame imageUrl:(NSString *)imageUrl;
 - (id)initWithFrame:(CGRect)frame imageUrl:(NSString *)imageUrl animated:(BOOL)animated;
@@ -28,11 +30,11 @@
 - (void)setImageUrlClearingCache:(NSString *)imageUrl animated:(BOOL)animated;
 - (void)setImageUrl:(NSString *)imageUrl completion:(void (^)(UIImage *image))completion;
 
+
+
 - (void)startIndicatorAnimating;
 - (void)stopIndicatorAnimating;
 
 - (void)cancel;
-
-+ (void)cacheImage:(NSString *)imageURLString completion:(void (^)(UIImage *image))completion;
 
 @end
