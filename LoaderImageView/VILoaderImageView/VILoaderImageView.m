@@ -17,7 +17,7 @@
 
 #define PREDECOMPRESS                   0
 
-#define LOCAL_CACHE_MAX_ITEMS           20
+#define LOCAL_CACHE_MAX_ITEMS           25
 
 #define MAX_CONCURRENT_OPERATIONS       5
 
@@ -108,8 +108,11 @@ static NSMutableArray *_localCache = nil;
         NSLog(@"Local cache hit");
         NSDictionary*imageDict = [results objectAtIndex:0];
         
-        [locallyCached removeObject:imageDict];
-        [locallyCached addObject:imageDict];
+        NSOperationQueue *queue = [VILoaderImageView getQueue];
+        [queue addOperationWithBlock:^{
+            [locallyCached removeObject:imageDict];
+            [locallyCached addObject:imageDict];
+        }];
         
         return [imageDict objectForKey:@"image"];
         
