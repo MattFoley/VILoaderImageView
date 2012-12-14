@@ -17,7 +17,7 @@
 
 #define PREDECOMPRESS                   0
 
-#define LOCAL_CACHE_MAX_ITEMS           15
+#define LOCAL_CACHE_MAX_ITEMS           20
 
 #define MAX_CONCURRENT_OPERATIONS       5
 
@@ -99,48 +99,52 @@ static NSMutableArray *_localCache = nil;
 
 + (UIImage*)checkForImageInLocalCache:(NSString *)imageName
 {
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"(name == %@)", imageName];
-    NSMutableArray *locallyCached = [VILoaderImageView getCache];
-    
-    NSArray *results = [[VILoaderImageView getCache] filteredArrayUsingPredicate:predicate];
-    
-    if ([results count] == 1) {
-        NSLog(@"Local cache hit");
-        NSDictionary*imageDict = [results objectAtIndex:0];
+    if(imageName != nil){
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"(name == %@)", imageName];
+        NSMutableArray *locallyCached = [VILoaderImageView getCache];
         
-        NSOperationQueue *queue = [VILoaderImageView getQueue];
-        [queue addOperationWithBlock:^{
-            [locallyCached removeObject:imageDict];
-            [locallyCached addObject:imageDict];
-        }];
+        NSArray *results = [locallyCached filteredArrayUsingPredicate:predicate];
         
-        return [imageDict objectForKey:@"image"];
-        
-    }else if([results count] == 0){
-        return nil;
+        if ([results count] == 1) {
+            NSLog(@"Local cache hit");
+            NSDictionary*imageDict = [results objectAtIndex:0];
+            
+            NSOperationQueue *queue = [VILoaderImageView getQueue];
+            [queue addOperationWithBlock:^{
+                [locallyCached removeObject:imageDict];
+                [locallyCached addObject:imageDict];
+            }];
+            
+            return [imageDict objectForKey:@"image"];
+            
+        }else if([results count] == 0){
+            return nil;
+        }else{
+            return [[results objectAtIndex:0]objectForKey:imageName];
+            NSLog(@"Multiple images in cache");
+        }
     }else{
-        return [[results objectAtIndex:0]objectForKey:imageName];
-        NSLog(@"Multiple images in cache");
+        return nil;
     }
 }
 
 + (void)checkAndRemoveExistingEntry:(NSString*)key
 {
-    
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"(name == %@)", key];
-    NSMutableArray *locallyCached = [VILoaderImageView getCache];
-    
-    NSArray *results = [[VILoaderImageView getCache] filteredArrayUsingPredicate:predicate];
-    
-    if ([results count] == 1) {
-        NSLog(@"Local cache hit");
-        NSDictionary*imageDict = [results objectAtIndex:0];
-        NSOperationQueue *queue = [VILoaderImageView getQueue];
-        [queue addOperationWithBlock:^{
+    NSOperationQueue *queue = [VILoaderImageView getQueue];
+    [queue addOperationWithBlock:^{
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"(name == %@)", key];
+        NSMutableArray *locallyCached = [VILoaderImageView getCache];
+        
+        NSArray *results = [[VILoaderImageView getCache] filteredArrayUsingPredicate:predicate];
+        
+        if ([results count] == 1) {
+            NSLog(@"Local cache hit");
+            NSDictionary*imageDict = [results objectAtIndex:0];
+            
             [locallyCached removeObject:imageDict];
-        }];
-    }
-    
+            
+        }
+    }];
 }
 
 + (void)addImageToLocalCache:(UIImage*)image withKey:(NSString*)key
@@ -148,16 +152,15 @@ static NSMutableArray *_localCache = nil;
     [VILoaderImageView checkAndRemoveExistingEntry:key];
     
     NSMutableArray *locallyCached = [VILoaderImageView getCache];
-    
-    if (locallyCached.count >= LOCAL_CACHE_MAX_ITEMS) {
-        NSOperationQueue *queue = [VILoaderImageView getQueue];
-        [queue addOperationWithBlock:^{
+    NSOperationQueue *queue = [VILoaderImageView getQueue];
+    [queue addOperationWithBlock:^{
+        if (locallyCached.count >= LOCAL_CACHE_MAX_ITEMS) {
             [locallyCached removeObjectAtIndex:0];
-        }];
-    }
-    
-    NSDictionary *imageDict = [NSDictionary dictionaryWithObjectsAndKeys:image, @"image", key, @"name", nil];
-    [locallyCached addObject:imageDict];
+        }
+        
+        NSDictionary *imageDict = [NSDictionary dictionaryWithObjectsAndKeys:image, @"image", key, @"name", nil];
+        [locallyCached addObject:imageDict];
+    }];
 }
 
 - (void)setImageUrl:(NSString *)imageUrl defaultImage:(UIImage *)defaultImage
@@ -397,7 +400,7 @@ static NSMutableArray *_localCache = nil;
 
 + (UIImage*)writeFile:(NSURL*)imageURL toPath:(NSString*)uniquePath
 {
-
+    NSLog(@"write to file");
     NSData *data = [[NSData alloc] initWithContentsOfURL:imageURL];
     UIImage* image = [[UIImage alloc] initWithData: data];
     //Rescale as a retina image.
